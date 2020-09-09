@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Example SMART App</title>
+        <script src="https://cdn.jsdelivr.net/npm/fhirclient/build/fhir-client.js"></script>
+        <style>
+            #patient, #diagnostic_reports, #labs {
+                font-family: Monaco, monospace;
+                white-space: pre;
+                font-size: 13px;
+                height: 30vh;
+                overflow: scroll;
+                border: 1px solid #CCC;
+            }
+        </style>
+    </head>
+    <body>
+        <h4>Current Patient</h4>
+        <div id="patient">Loading...</div>
+        <br/>
+        <h4>Diagnostic Reports</h4>
+        <div id="diagnostic_reports">Loading...</div>
+        <br/>
+        <h4>Labs</h4>
+        <div id="labs">Loading...</div>
+        <script type="text/javascript">
+            FHIR.oauth2.ready().then(function(client) {
+                
+                // Render the current patient (or any error)
+                client.patient.read().then(
+                    function(pt) {
+                        document.getElementById("patient").innerText = JSON.stringify(pt, null, 4);
+                    },
+                    function(error) {
+                        document.getElementById("patient").innerText = error.stack;
+                    }
+                );
+
+                client.request("/DiagnosticReport?patient=" + client.patient.id)
+                .then(function(data) {
+                    console.log(data)
+                    if (!data.entry || !data.entry.length) {
+                        throw new Error("No Diagnostic Reports found for the selected patient");
+                    }
+                    return data.entry;
+                })
+                .then(
+                    function(diagnosticReports) {
+                        document.getElementById("diagnostic_reports").innerText = JSON.stringify(diagnosticReports, null, 4);
+                    },
+                    function(error) {
+                        document.getElementById("diagnostic_reports").innerText = error.stack;
+                    }
+                );
+
+                client.request("/Observation?category=laboratory&patient=" + client.patient.id)
+                .then(function(data) {
+                    console.log(data)
+                    if (!data.entry || !data.entry.length) {
+                        throw new Error("No Labs found for the selected patient");
+                    }
+                    return data.entry;
+                })
+                .then(
+                    function(diagnosticReports) {
+                        document.getElementById("labs").innerText = JSON.stringify(diagnosticReports, null, 4);
+                    },
+                    function(error) {
+                        document.getElementById("labs").innerText = error.stack;
+                    }
+                );
+
+            }).catch(console.error);
+        </script>
+    </body>
+</html>
+
